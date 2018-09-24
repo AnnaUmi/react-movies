@@ -13,10 +13,10 @@ class Movies extends Component {
         genres: [],
         pageSize: 4,
         currentPage: 1,
-        sortColumn: {path: 'tite', order: 'asc'}
+        sortColumn: { path: 'tite', order: 'asc' }
     }
     componentDidMount() {
-        const genres = [{_id:"", name: 'All Genres' }, ...getGenres()]
+        const genres = [{ _id: "", name: 'All Genres' }, ...getGenres()]
         this.setState({ movies: getMovies(), genres: genres });
     }
     handleDelete = movie => {
@@ -40,28 +40,29 @@ class Movies extends Component {
     handleGenreSelect = genre => {
         this.setState({ selectedGenre: genre, currentPage: 1 })
     }
-    handleSort = path => {
-        const sortColumn = {...this.state,sortColumn};
-        if(sortColumn === path) sortColumn.order = (sortColumn.order === 'asc') ? 'desc' : 'asc';
-        else{
-            sortColumn.path = path;
-            sortColumn.order = 'asc';
-        }
+    handleSort = sortColumn => {
+
         this.setState({
             sortColumn
         })
     }
-    render() {
-        const { length: moviesCount } = this.state.movies;
+    getPageData = () => {
         const { pageSize, currentPage, movies: allMovies, selectedGenre, sortColumn } = this.state;
-
-        if (moviesCount === 0) return <p> no movies</p>
         const filtered = selectedGenre && selectedGenre._id
             ? allMovies.filter(m => m.genre._id === selectedGenre._id)
             : allMovies;
 
         const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order])
         const movies = paginate(sorted, currentPage, pageSize);
+        return {totalCount: filtered.length, data: movies}
+
+    }
+    render() {
+        const { length: moviesCount } = this.state.movies;
+        const { pageSize, currentPage, sortColumn } = this.state;
+
+        if (moviesCount === 0) return <p> no movies</p>
+        const {totalCount, data: movies} = this.getPageData();
         return (
 
             <div className="row">
@@ -73,17 +74,18 @@ class Movies extends Component {
                     />
                 </div>
                 <div className="col">
-                    <p>Showing {filtered.length} in the database.</p>
+                    <p>Showing {totalCount} in the database.</p>
 
                     <MoviesTable
                         onDelete={this.handleDelete}
                         onLike={this.handleLike}
                         movies={movies}
                         onSort={this.handleSort}
+                        sortColumn={sortColumn}
                     />
 
                     <Pagination
-                        itemsCount={filtered.length}
+                        itemsCount={totalCount}
                         pageSize={this.state.pageSize}
                         onPageChange={this.handlePageChange}
                         currentPage={this.state.currentPage}
